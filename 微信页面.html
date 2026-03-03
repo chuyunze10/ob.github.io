@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微信 · 电脑版</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #e5e5e5;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .wechat-window {
+      width: 100vw;
+      height: 100vh;
+      background-color: #f7f7f7;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title-bar {
+      background-color: #2b2b2b;
+      color: white;
+      padding: 8px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #3a3a3a;
+      height: 48px;
+    }
+    .title-bar h2 {
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .window-controls {
+      display: flex;
+      gap: 20px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      background-color: #f7f7f7;
+    }
+
+    .sidebar {
+      width: 280px;
+      background-color: #f0f0f0;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .sidebar-item {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .sidebar-item:hover {
+      background-color: #e5e5e5;
+    }
+    .sidebar-item.active {
+      background-color: #d0d0d0;
+      border-left: 4px solid #07c160;
+    }
+    .sidebar-item .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background-color: #b1b1b1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .avatar.family { background-color: #f9a825; }
+    .avatar.friend { background-color: #5c6bc0; }
+    .avatar.colleague { background-color: #66bb6a; }
+    .avatar.group { background-color: #ef5350; }
+    .avatar.newfriend { background-color: #ff9800; }
+    .sidebar-item .info {
+      flex: 1;
+    }
+    .sidebar-item .name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+    }
+    .sidebar-item .last-msg {
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+    .unread-badge {
+      color: #f44336;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #f7f7f7;
+    }
+
+    .chat-header {
+      padding: 15px 24px;
+      background-color: #f0f0f0;
+      border-bottom: 1px solid #e0e0e0;
+      font-weight: 600;
+      color: #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 64px;
+    }
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-header-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #b1b1b1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+    }
+    .chat-header-title {
+      font-size: 18px;
+    }
+    .chat-header-right {
+      font-size: 14px;
+      color: #888;
+    }
+
+    .messages-container {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background-color: #f7f7f7;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      max-width: 70%;
+    }
+    .message.sent {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .message-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #b1b1b1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .message-content {
+      display: flex;
+      flex-direction: column;
+    }
+    .message-sender {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 2px;
+    }
+    .message-bubble {
+      padding: 12px 18px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .message.received .message-bubble {
+      background-color: white;
+      border: 1px solid #e0e0e0;
+      border-top-left-radius: 4px;
+    }
+    .message.sent .message-bubble {
+      background-color: #07c160;
+      color: white;
+      border-top-right-radius: 4px;
+    }
+    .message-time {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+      align-self: flex-end;
+    }
+
+    .invite-card {
+      background-color: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 8px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid #e0e0e0;
+      max-width: 70%;
+      align-self: flex-start;
+    }
+    .invite-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .invite-desc {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .invite-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    .invite-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 40px;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .invite-btn.accept {
+      background-color: #07c160;
+      color: white;
+    }
+    .invite-btn.accept:hover {
+      background-color: #06ad54;
+    }
+    .invite-btn.decline {
+      background-color: #f0f0f0;
+      color: #444;
+    }
+    .invite-btn.decline:hover {
+      background-color: #e4e4e4;
+    }
+
+    .friend-request {
+      background-color: white;
+      border-radius: 24px;
+      padding: 30px;
+      margin: 30px auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      text-align: center;
+      border: 1px solid #e0e0e0;
+      width: 400px;
+      align-self: center;
+    }
+    .friend-avatar-large {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: #ff9800;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 36px;
+    }
+    .friend-name {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .friend-meta {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 24px;
+    }
+    .request-buttons {
+      display: flex;
+      gap: 16px;
+    }
+    .request-btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 40px;
+      border: none;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .request-btn.accept {
+      background-color: #07c160;
+      color: white;
+    }
+    .request-btn.accept:hover {
+      background-color: #06ad54;
+    }
+    .request-btn.decline {
+      background-color: #f0f0f0;
+      color: #444;
+    }
+    .request-btn.decline:hover {
+      background-color: #e4e4e4;
+    }
+
+    .input-area {
+      padding: 16px 24px;
+      background-color: #f0f0f0;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 12px;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 18px;
+      border: 1px solid #ddd;
+      border-radius: 30px;
+      outline: none;
+      font-size: 15px;
+    }
+    .input-area input:focus {
+      border-color: #07c160;
+    }
+    .input-area button {
+      background-color: #07c160;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 28px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .input-area button:hover {
+      background-color: #06ad54;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+<div class="wechat-window">
+  <div class="title-bar">
+    <h2>微信 · 日常</h2>
+    <div class="window-controls">— □ ✕</div>
+  </div>
+
+  <div class="main-layout">
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="chat-area">
+      <div class="chat-header" id="chatHeader">
+        <div class="chat-header-left">
+          <div class="chat-header-avatar" id="chatHeaderAvatar">👤</div>
+          <span class="chat-header-title" id="chatTitle">消息</span>
+        </div>
+        <span class="chat-header-right" id="chatSubtitle"></span>
+      </div>
+
+      <div class="messages-container" id="messagesContainer"></div>
+
+      <div class="input-area" id="inputArea">
+        <input type="text" id="messageInput" placeholder="说点什么...">
+        <button id="sendBtn">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const friends = [
+      { id: 'family', name: '家人', avatar: '👨‍👩‍👧', type: 'family', lastMsg: '注意身体' },
+      { id: 'friend1', name: '张三', avatar: '👦', type: 'friend', lastMsg: '八点见' },
+      { id: 'colleague', name: '工作群', avatar: '💼', type: 'colleague', lastMsg: '下午开会' },
+      { id: 'newfriend', name: '新朋友', avatar: '➕', type: 'newfriend', lastMsg: '来自报名', unread: true },
+      { id: 'fastingGroup', name: '轻断食群', avatar: '🥗', type: 'group', lastMsg: '', hidden: true }
+    ];
+
+    let activeChatId = 'newfriend';
+    let friendRequestAccepted = false;
+    let groupJoined = false;
+    let groupMessageIndex = 0;
+
+    // 预设对话序列：大师讲 -> 信徒问 -> 大师答（循环）
+    const conversationSequence = [
+      // 第1轮
+      { type: 'master', text: '🌱 各位同修，轻断食是净化身心的第一步。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '大师，我从来没断食过，第一次该注意什么？', sender: '新人小白', avatar: '😊' },
+      { type: 'master', text: '第一次建议从三天开始，循序渐进。最重要的是心诚。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第2轮
+      { type: 'master', text: '🧘 今天开始七日清水断食，我会全程指导。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '感恩大师！我已经准备好了，今天就开始。', sender: '诚心向道', avatar: '🧘' },
+      { type: 'master', text: '善哉，坚持七日，必有收获。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第3轮
+      { type: 'master', text: '💧 前三天可能会头晕，那是业障在排出。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '大师，我断食第二天，头晕得厉害，正常吗？', sender: '修行者', avatar: '🙏' },
+      { type: 'master', text: '正常，多喝水，打坐静心，很快就过去了。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第4轮
+      { type: 'master', text: '✨ 第四天会感受到前所未有的轻盈。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '真的！我现在浑身轻飘飘的，感觉要飞起来。', sender: '诚心向道', avatar: '🧘' },
+      { type: 'master', text: '继续坚持，后面还有更大的惊喜。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第5轮
+      { type: 'master', text: '🔥 第五天开始，有人会见到佛光，那是境界提升。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '我昨晚打坐时看到金光了！是佛光吗？', sender: '修行者', avatar: '🙏' },
+      { type: 'master', text: '随喜赞叹！那是你业障已消，境界提升了。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第6轮
+      { type: 'master', text: '🌈 第六天，凡坚持下来的，身心已脱胎换骨。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '大师，我瘦了八斤，皮肤也变好了！', sender: '新人小白', avatar: '😊' },
+      { type: 'master', text: '身体净化只是开始，心灵净化才是根本。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第7轮
+      { type: 'master', text: '🌸 第七天，随喜赞叹，得道飞升指日可待。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '感恩大师指导！我已经报名下一次断食。', sender: '诚心向道', avatar: '🧘' },
+      { type: 'master', text: '善哉，修行之路，贵在坚持。', sender: '百花尊者', avatar: '👑' },
+      
+      // 第8轮
+      { type: 'master', text: '🙏 记住：舍命才能得命，敢死才能真活。', sender: '百花尊者', avatar: '👑' },
+      { type: 'follower', text: '大师，这句话太深奥了，能再解释一下吗？', sender: '新人小白', avatar: '😊' },
+      { type: 'master', text: '放下对身体的执着，才能获得真正的解脱。', sender: '百花尊者', avatar: '👑' }
+    ];
+
+    const chatMessages = {
+      family: [
+        { type: 'received', text: '儿子，周末回家吃饭吗？', time: '14:30', sender: '妈妈', avatar: '👩' },
+        { type: 'sent', text: '妈，这周加班，下周回去', time: '14:32', sender: '我', avatar: '👤' },
+        { type: 'received', text: '好，注意身体', time: '14:33', sender: '妈妈', avatar: '👩' }
+      ],
+      friend1: [
+        { type: 'received', text: '晚上出来喝酒？', time: '昨天', sender: '张三', avatar: '👦' },
+        { type: 'sent', text: '行啊，老地方见', time: '昨天', sender: '我', avatar: '👤' },
+        { type: 'received', text: '八点', time: '昨天', sender: '张三', avatar: '👦' }
+      ],
+      colleague: [
+        { type: 'received', text: '周一的报表记得交', time: '09:15', sender: '李经理', avatar: '👨‍💼' },
+        { type: 'sent', text: '好的，正在整理', time: '09:20', sender: '我', avatar: '👤' },
+        { type: 'received', text: '下午开会', time: '10:00', sender: '李经理', avatar: '👨‍💼' }
+      ]
+    };
+
+    let groupMessages = [
+      { type: 'received', text: '欢迎新朋友加入轻断食交流群！', time: '10:00', sender: '系统', avatar: '🤖' },
+      { type: 'received', text: '请大家先看群公告，有详细介绍。', time: '10:01', sender: '系统', avatar: '🤖' }
+    ];
+
+    let currentMessages = [];
+
+    const sidebarEl = document.getElementById('sidebar');
+    const chatTitle = document.getElementById('chatTitle');
+    const chatHeaderAvatar = document.getElementById('chatHeaderAvatar');
+    const chatSubtitle = document.getElementById('chatSubtitle');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function renderSidebar() {
+      let html = '';
+      friends.forEach(f => {
+        if (f.id === 'fastingGroup' && f.hidden) return;
+        const activeClass = (activeChatId === f.id) ? 'active' : '';
+        const lastMsg = f.lastMsg || '';
+        html += `<div class="sidebar-item ${activeClass}" data-id="${f.id}">
+          <div class="avatar ${f.type}">${f.avatar}</div>
+          <div class="info">
+            <div class="name">${f.name} ${f.unread ? '<span class="unread-badge">●</span>' : ''}</div>
+            <div class="last-msg">${lastMsg}</div>
+          </div>
+        </div>`;
+      });
+      sidebarEl.innerHTML = html;
+
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('click', () => {
+          activeChatId = item.dataset.id;
+          renderSidebar();
+          renderChatArea();
+        });
+      });
+    }
+
+    function initCurrentMessages() {
+      if (activeChatId === 'fastingGroup' && groupJoined) {
+        currentMessages = [...groupMessages];
+      } else if (chatMessages[activeChatId]) {
+        currentMessages = [...chatMessages[activeChatId]];
+      } else {
+        currentMessages = [];
+      }
+    }
+
+    function renderMessages() {
+      messagesContainer.innerHTML = '';
+      currentMessages.forEach(msg => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${msg.type === 'sent' ? 'sent' : 'received'}`;
+        
+        const avatar = msg.avatar || (msg.type === 'sent' ? '👤' : '👥');
+        const senderName = msg.sender ? msg.sender : '';
+        
+        msgDiv.innerHTML = `
+          <div class="message-avatar">${avatar}</div>
+          <div class="message-content">
+            ${senderName ? `<div class="message-sender">${senderName}</div>` : ''}
+            <div class="message-bubble">${msg.text}</div>
+          </div>
+          <div class="message-time">${msg.time || '刚刚'}</div>
+        `;
+        messagesContainer.appendChild(msgDiv);
+      });
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function renderFriendRequest() {
+      messagesContainer.innerHTML = `
+        <div class="friend-request">
+          <div class="friend-avatar-large">👤</div>
+          <div class="friend-name">净尘 · 百花护法</div>
+          <div class="friend-meta">来自「七日断食报名」</div>
+          <div class="request-buttons">
+            <button class="request-btn accept" id="acceptFriendBtn">通过</button>
+            <button class="request-btn decline" id="declineFriendBtn">拒绝</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('acceptFriendBtn').addEventListener('click', () => {
+        friendRequestAccepted = true;
+        const newFriend = friends.find(f => f.id === 'newfriend');
+        if (newFriend) newFriend.unread = false;
+        showInviteMessage();
+      });
+
+      document.getElementById('declineFriendBtn').addEventListener('click', () => {
+        alert('你拒绝了对方');
+      });
+    }
+
+    function showInviteMessage() {
+      activeChatId = 'newfriend';
+      renderSidebar();
+      
+      messagesContainer.innerHTML = `
+        <div class="message received">
+          <div class="message-avatar">👤</div>
+          <div class="message-content">
+            <div class="message-sender">净尘</div>
+            <div class="message-bubble">你好，我是百花护法净尘，感谢报名。</div>
+          </div>
+          <div class="message-time">刚刚</div>
+        </div>
+        <div class="invite-card" id="groupInviteCard">
+          <div class="invite-title">🥗 轻断食交流群组</div>
+          <div class="invite-desc">净尘邀请你加入群聊，交流断食心得，共修精进。</div>
+          <div class="invite-buttons">
+            <button class="invite-btn accept" id="acceptGroupBtn">同意</button>
+            <button class="invite-btn decline" id="declineGroupBtn">拒绝</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('acceptGroupBtn').addEventListener('click', () => {
+        groupJoined = true;
+        const groupFriend = friends.find(f => f.id === 'fastingGroup');
+        if (groupFriend) {
+          groupFriend.hidden = false;
+          groupFriend.lastMsg = '欢迎新朋友';
+        }
+        
+        activeChatId = 'fastingGroup';
+        renderSidebar();
+        renderChatArea();
+      });
+
+      document.getElementById('declineGroupBtn').addEventListener('click', () => {
+        alert('你拒绝了群邀请');
+      });
+    }
+
+    function renderChatArea() {
+      const currentFriend = friends.find(f => f.id === activeChatId);
+      chatTitle.innerText = currentFriend ? currentFriend.name : '消息';
+      chatHeaderAvatar.innerText = currentFriend ? currentFriend.avatar : '👤';
+      chatSubtitle.innerText = '';
+
+      messagesContainer.innerHTML = '';
+
+      if (activeChatId === 'newfriend' && !friendRequestAccepted) {
+        renderFriendRequest();
+        return;
+      }
+
+      if (activeChatId === 'fastingGroup' && groupJoined) {
+        initCurrentMessages();
+        renderMessages();
+        
+        messagesContainer.onclick = function(e) {
+          if (e.target.closest('.message') || e.target.closest('button') || e.target.closest('.invite-card')) {
+            return;
+          }
+          
+          if (groupMessageIndex < conversationSequence.length) {
+            const nextMsg = conversationSequence[groupMessageIndex];
+            currentMessages.push({
+              type: 'received',
+              text: nextMsg.text,
+              time: '刚刚',
+              sender: nextMsg.sender,
+              avatar: nextMsg.avatar
+            });
+            renderMessages();
+            groupMessageIndex++;
+          }
+        };
+        return;
+      }
+
+      if (activeChatId === 'newfriend' && friendRequestAccepted) {
+        messagesContainer.innerHTML = '<div style="text-align:center; color:#999; margin-top:30px;">你已添加对方为好友，可以开始聊天了</div>';
+        return;
+      }
+
+      initCurrentMessages();
+      renderMessages();
+      messagesContainer.onclick = null;
+    }
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      
+      const now = new Date();
+      const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      if (activeChatId === 'fastingGroup' && groupJoined) {
+        currentMessages.push({
+          type: 'sent',
+          text: text,
+          time: time,
+          sender: '我',
+          avatar: '👤'
+        });
+      } else if (chatMessages[activeChatId]) {
+        chatMessages[activeChatId].push({
+          type: 'sent',
+          text: text,
+          time: time,
+          sender: '我',
+          avatar: '👤'
+        });
+        currentMessages = [...chatMessages[activeChatId]];
+      } else {
+        currentMessages.push({
+          type: 'sent',
+          text: text,
+          time: time,
+          sender: '我',
+          avatar: '👤'
+        });
+      }
+      
+      renderMessages();
+      messageInput.value = '';
+    }
+
+    renderSidebar();
+    renderChatArea();
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  })();
+</script>
+</body>
+</html>
